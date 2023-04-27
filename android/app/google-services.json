@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "751405322678",
+    "project_id": "catalogo-ropa-app",
+    "storage_bucket": "catalogo-ropa-app.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:751405322678:android:8d628ef5832344fe06b117",
+        "android_client_info": {
+          "package_name": "com.example.proyect_catalogo"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "751405322678-i2nt86dcigbd4amqp1aksv74v1p9t0an.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCL3eaNSPyC0bkZsUEYe61ybTjbYGe8vYE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "751405322678-i2nt86dcigbd4amqp1aksv74v1p9t0an.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
