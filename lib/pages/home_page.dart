@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'dart:convert';
+//import 'dart:convert';
 import 'detalles_producto.dart';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class HomePage extends StatefulWidget {
@@ -11,6 +10,37 @@ class HomePage extends StatefulWidget {
 
   @override
   _HomePageState createState() => _HomePageState();
+}
+
+class Producto {
+  String id;
+  String categoria;
+  String nombre;
+  String imagen;
+  int piezas;
+  bool favorito;
+
+  Producto({
+    required this.id,
+    required this.nombre,
+    required this.categoria,
+    required this.imagen,
+    required this.piezas,
+    required this.favorito,
+  });
+
+  // Método para crear un objeto Producto a partir de un documento de Firestore
+  factory Producto.fromFirestore(QueryDocumentSnapshot doc) {
+    Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+    return Producto(
+      id: doc.id,
+      categoria: data['category'],
+      nombre: data['nameCloth'],
+      imagen: data['imgCloth'],
+      piezas: 212,
+      favorito: false,
+    );
+  }
 }
 
 class _HomePageState extends State<HomePage> {
@@ -31,26 +61,42 @@ class _HomePageState extends State<HomePage> {
 
   List<String> categoriaProduct = ["Camisas", "Blusas", "Playeras"];
 
-  late List<Map<String, dynamic>> productos;
+  List<Producto> productos = [];
 
   @override
   void initState() {
     super.initState();
-    String jsonStr =
-        '[{"nombre": "Navigo Zyro PF56", "piezas": 157, "imagen": "https://img.ltwebstatic.com/images3_pi/2021/11/17/1637110871076d3c8e11fb35a6a4fc6e2f3625928f.webp", "favorito": true}, {"nombre": "Joyride Setter C3", "piezas": 243, "imagen": "https://http2.mlstatic.com/D_NQ_NP_811401-MLM49023105257_022022-O.webp", "favorito": false}, {"nombre": "Luck Aerospace", "piezas": 97, "imagen": "https://qafacol.vteximg.com.br/arquivos/ids/452712-900-900/leggins-mujer-40230362-10_2.jpg?v=637636048187470000", "favorito": false}, {"nombre": "Kein Reto SE", "piezas": 412, "imagen": "https://cdn.shopify.com/s/files/1/0244/2887/1714/products/xpt038_a27dd951-83e3-4f41-bfd3-2db2c9348dfa.jpg?v=1679788751&width=823", "favorito": false}, {"nombre": "Victus Three 56", "piezas": 215, "imagen": "https://img.ltwebstatic.com/images3_pi/2021/04/19/16188054272140c9aec824e39b65e7fb8d5737d31f_thumbnail_900x.webp", "favorito": false}]';
-    productos = json.decode(jsonStr).cast<Map<String, dynamic>>();
-  }
-
-  List<List<Map<String, dynamic>>> chunk(
-      List<Map<String, dynamic>> list, int chunkSize) {
-    return List.generate(
-      (list.length / chunkSize).ceil(),
-      (i) => list.skip(i * chunkSize).take(chunkSize).toList(),
-    );
+    obtenerProductos();
   }
 
   CollectionReference datosUsuario =
       FirebaseFirestore.instance.collection('clothes');
+
+  Future<void> obtenerProductos() async {
+    try {
+      // Obtener la colección "clothes" desde Firestore
+      QuerySnapshot querySnapshot =
+          await FirebaseFirestore.instance.collection('clothes').get();
+
+      // Verificar si la consulta fue exitosa
+      if (querySnapshot.docs.isNotEmpty) {
+        // Obtener la lista de documentos
+        List<QueryDocumentSnapshot> docs = querySnapshot.docs;
+
+        List<Producto> listaProductos = [];
+        docs.forEach((doc) {
+          Producto producto = Producto.fromFirestore(doc);
+          listaProductos.add(producto);
+        });
+
+        setState(() {
+          productos = listaProductos;
+        });
+      }
+    } catch (e) {
+      print('Error al obtener los productos: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -140,122 +186,105 @@ class _HomePageState extends State<HomePage> {
           const SizedBox(
             height: 12,
           ),
-          Wrap(
-            children: chunk(productos, 2)
-                .map(
-                  (sublista) => Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: sublista
-                        .map(
-                          (producto) => Container(
-                              margin: const EdgeInsets.only(bottom: 20),
-                              height: MediaQuery.of(context).size.width * 0.59,
-                              width: MediaQuery.of(context).size.width * 0.44,
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(25),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.grey.withOpacity(0.5),
-                                    spreadRadius: 3,
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 3),
+          Column(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              Wrap(
+                spacing: MediaQuery.of(context).size.width * 0.045,
+                children: productos.map((producto) {
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 20),
+                    height: MediaQuery.of(context).size.width * 0.582,
+                    width: MediaQuery.of(context).size.width * 0.44,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(25),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.5),
+                          spreadRadius: 3,
+                          blurRadius: 10,
+                          offset: const Offset(0, 3),
+                        )
+                      ],
+                    ),
+                    child: Material(
+                      borderRadius: BorderRadius.circular(25),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(25),
+                        splashColor: Colors.black26,
+                        onTap: () {
+                          print("object1");
+                          Navigator.of(context).push(MaterialPageRoute(
+                              builder: (context) => DetallesProducto()));
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 14),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: <Widget>[
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: <Widget>[
+                                  Padding(
+                                    padding: const EdgeInsets.only(left: 12),
+                                    child: Text(
+                                      "${producto.piezas} Pz",
+                                      style: GoogleFonts.poppins(
+                                          textStyle: styleNumPiezas),
+                                    ),
+                                  ),
+                                  IconButton(
+                                    iconSize: 28,
+                                    color: const Color(0xFF00359E),
+                                    onPressed: () {
+                                      setState(() {
+                                        producto.favorito = !producto.favorito;
+                                      });
+                                    },
+                                    icon: producto.favorito
+                                        ? const Icon(
+                                            Icons.favorite_rounded,
+                                          )
+                                        : const Icon(
+                                            Icons.favorite_outline_rounded,
+                                          ),
                                   )
                                 ],
                               ),
-                              child: Material(
-                                borderRadius: BorderRadius.circular(25),
-                                child: InkWell(
-                                  borderRadius: BorderRadius.circular(25),
-                                  splashColor: Colors.black26,
-                                  onTap: () {
-                                    print("object1");
-                                    Navigator.of(context).push(
-                                        MaterialPageRoute(
-                                            builder: (context) =>
-                                                DetallesProducto()));
-                                  },
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 14),
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.center,
-                                      children: <Widget>[
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: <Widget>[
-                                            Padding(
-                                              padding: const EdgeInsets.only(
-                                                  left: 12),
-                                              child: Text(
-                                                "${producto['piezas']} Pz",
-                                                style: GoogleFonts.poppins(
-                                                    textStyle: styleNumPiezas),
-                                              ),
-                                            ),
-                                            IconButton(
-                                              iconSize: 28,
-                                              color: const Color(0xFF00359E),
-                                              //color: const Color(0xFF3736be),
-                                              onPressed: () {
-                                                setState(() {
-                                                  producto['favorito'] =
-                                                      !producto['favorito'];
-                                                });
-                                              },
-                                              icon: producto['favorito']
-                                                  ? const Icon(
-                                                      Icons.favorite_rounded,
-                                                    )
-                                                  : const Icon(
-                                                      Icons
-                                                          .favorite_outline_rounded,
-                                                    ),
-                                            )
-                                          ],
-                                        ),
-                                        Container(
-                                            alignment: Alignment.center,
-                                            child: CachedNetworkImage(
-                                              height: MediaQuery.of(context)
-                                                      .size
-                                                      .height *
-                                                  0.17,
-                                              imageUrl: producto['imagen'],
-                                              placeholder: (context, url) =>
-                                                  const Center(
-                                                      child:
-                                                          CircularProgressIndicator()),
-                                              errorWidget:
-                                                  (context, url, error) =>
-                                                      const Icon(
-                                                Icons.error_outline_rounded,
-                                                //color: Color(0xFF3736be),
-                                                size: 50,
-                                              ),
-                                            )),
-                                        const SizedBox(height: 8),
-                                        Text(
-                                          producto['nombre'],
-                                          style: GoogleFonts.quicksand(
-                                              textStyle: styleNameProduct),
-                                        ),
-                                        const SizedBox(height: 6),
-                                      ],
+                              Container(
+                                  alignment: Alignment.center,
+                                  child: CachedNetworkImage(
+                                    height: MediaQuery.of(context).size.height *
+                                        0.17,
+                                    imageUrl: producto.imagen,
+                                    placeholder: (context, url) => const Center(
+                                        child: CircularProgressIndicator()),
+                                    errorWidget: (context, url, error) =>
+                                        const Icon(
+                                      Icons.error_outline_rounded,
+                                      size: 50,
                                     ),
-                                  ),
-                                ),
-                              )),
-                        )
-                        .toList(),
-                  ),
-                )
-                .toList(),
-          ),
+                                  )),
+                              const SizedBox(height: 8),
+                              Text(
+                                producto.nombre,
+                                style: GoogleFonts.quicksand(
+                                    textStyle: styleNameProduct),
+                              ),
+                              const SizedBox(height: 6),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ],
+          )
         ],
       ),
     );
